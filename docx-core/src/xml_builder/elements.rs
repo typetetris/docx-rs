@@ -386,6 +386,7 @@ impl<W: Write> XMLBuilder<W> {
     closed_w_with_type_el!(table_cell_width, "w:tcW");
 
     closed!(table_row_height, "w:trHeight", "w:val", "w:hRule");
+    closed!(table_header, "w:tblHeader");
 
     closed_with_usize!(grid_span, "w:gridSpan");
     closed_with_str!(vertical_merge, "w:vMerge");

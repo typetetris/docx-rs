@@ -117,6 +117,7 @@ mod table_cell_margins;
 mod table_cell_property;
 mod table_cell_width;
 mod table_grid;
+mod table_header;
 mod table_indent;
 mod table_layout;
 mod table_of_contents;
