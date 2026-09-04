@@ -45,6 +45,8 @@ export type TableRowPropertyJSON = {
   widthBefore: number | null;
   del?: DeleteJSONData;
   ins?: InsertJSONData;
+  cantSplit?: "cantSplit";
+  header?: "tblHeader";
 };
 
 export type TableCellJSON = {
