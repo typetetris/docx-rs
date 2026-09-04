@@ -17,6 +17,7 @@ impl ElementReader for TableRow {
         let mut del = None;
         let mut ins = None;
         let mut height_rule = None;
+        let mut is_header = false;
         loop {
             let e = r.next_event();
             match e {
@@ -77,6 +78,9 @@ impl ElementReader for TableRow {
                                 ins = Some(i);
                             }
                         }
+                        XMLElement::TableHeader => {
+                            is_header = read_bool(&attributes);
+                        }
                         _ => {}
                     }
                 }
@@ -116,6 +120,10 @@ impl ElementReader for TableRow {
                             row = row.insert(ins);
                         }
 
+                        if is_header {
+                            row = row.header();
+                        }
+
                         return Ok(row);
                     }
                 }
@@ -123,5 +131,43 @@ impl ElementReader for TableRow {
                 _ => {}
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::BuildXML;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn test_read_header_and_rebuild() {
+        let xml = r#"<w:tr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+    <w:trPr>
+        <w:tblHeader />
+    </w:trPr>
+    <w:tc />
+</w:tr>"#;
+        let mut parser = EventReader::new(xml.as_bytes());
+        let row = TableRow::read(&mut parser, &[]).unwrap();
+
+        assert_eq!(row, TableRow::new(vec![TableCell::new()]).header());
+
+        let rebuilt = String::from_utf8(row.build()).unwrap();
+        assert!(rebuilt.contains("<w:tblHeader />"));
+    }
+
+    #[test]
+    fn test_read_disabled_header() {
+        let xml = r#"<w:tr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+    <w:trPr>
+        <w:tblHeader w:val="false" />
+    </w:trPr>
+    <w:tc />
+</w:tr>"#;
+        let mut parser = EventReader::new(xml.as_bytes());
+        let row = TableRow::read(&mut parser, &[]).unwrap();
+
+        assert_eq!(row, TableRow::new(vec![TableCell::new()]));
     }
 }

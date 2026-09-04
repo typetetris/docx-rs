@@ -2,6 +2,7 @@ use serde::Serialize;
 use std::io::Write;
 
 use super::*;
+use crate::documents::elements::table_header::TableHeader;
 use crate::xml_builder::*;
 use crate::{documents::BuildXML, HeightRule};
 
@@ -22,6 +23,8 @@ pub struct TableRowProperty {
     pub ins: Option<Insert>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cant_split: Option<CantSplit>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub header: Option<TableHeader>,
 }
 
 impl TableRowProperty {
@@ -73,6 +76,11 @@ impl TableRowProperty {
         self.cant_split = Some(CantSplit::default());
         self
     }
+
+    pub fn header(mut self) -> Self {
+        self.header = Some(TableHeader::default());
+        self
+    }
 }
 
 impl BuildXML for TableRowProperty {
@@ -85,6 +93,7 @@ impl BuildXML for TableRowProperty {
             .add_optional_child(&self.del)?
             .add_optional_child(&self.ins)?
             .add_optional_child(&self.cant_split)?
+            .add_optional_child(&self.header)?
             .apply_opt(self.row_height, |h, b| {
                 b.table_row_height(
                     &format!("{h}"),
@@ -116,5 +125,14 @@ mod tests {
             str::from_utf8(&b).unwrap(),
             r#"<w:trPr><w:cantSplit /></w:trPr>"#
         );
+    }
+
+    #[test]
+    fn test_header() {
+        let b = TableRowProperty::new().header().build();
+        assert_eq!(
+            str::from_utf8(&b).unwrap(),
+            r#"<w:trPr><w:tblHeader /></w:trPr>"#
+        )
     }
 }

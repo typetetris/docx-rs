@@ -86,6 +86,11 @@ impl TableRow {
         self.property = self.property.cant_split();
         self
     }
+
+    pub fn header(mut self) -> TableRow {
+        self.property = self.property.header();
+        self
+    }
 }
 
 impl BuildXML for TableRow {
@@ -151,6 +156,15 @@ mod tests {
         assert_xml_eq(
             str::from_utf8(&b).unwrap(),
             r#"<w:tr><w:trPr><w:cantSplit /></w:trPr><w:tc><w:tcPr /><w:p w14:paraId="12345678"><w:pPr><w:rPr /></w:pPr></w:p></w:tc></w:tr>"#
+        );
+    }
+
+    #[test]
+    fn test_row_header() {
+        let b = TableRow::new(vec![TableCell::new()]).header().build();
+        assert_eq!(
+            str::from_utf8(&b).unwrap(),
+            r#"<w:tr><w:trPr><w:tblHeader /></w:trPr><w:tc><w:tcPr /><w:p w14:paraId="12345678"><w:pPr><w:rPr /></w:pPr></w:p></w:tc></w:tr>"#
         );
     }
 }

@@ -185,6 +185,35 @@ pub fn table_merged() -> Result<(), DocxError> {
 }
 
 #[test]
+pub fn table_with_header() -> Result<(), DocxError> {
+    let path = std::path::Path::new("./tests/output/table_with_header.docx");
+    let file = std::fs::File::create(path).unwrap();
+
+    let mut rows = vec![TableRow::new(vec![
+        TableCell::new()
+            .add_paragraph(Paragraph::new().add_run(Run::new().add_text("HeaderCell1"))),
+        TableCell::new()
+            .add_paragraph(Paragraph::new().add_run(Run::new().add_text("HeaderCell2"))),
+    ])
+    .header()];
+
+    rows.extend((1..80).map(|n| {
+        TableRow::new(vec![
+            TableCell::new().add_paragraph(
+                Paragraph::new().add_run(Run::new().add_text(format!("Row{n}Cell1"))),
+            ),
+            TableCell::new().add_paragraph(
+                Paragraph::new().add_run(Run::new().add_text(format!("Row{n}Cell2"))),
+            ),
+        ])
+    }));
+
+    let table = Table::new(rows);
+    Docx::new().add_table(table).build().pack(file)?;
+    Ok(())
+}
+
+#[test]
 pub fn decoration() -> Result<(), DocxError> {
     let path = std::path::Path::new("./tests/output/decoration.docx");
     let file = std::fs::File::create(path).unwrap();
