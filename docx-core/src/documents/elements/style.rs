@@ -20,6 +20,7 @@ pub struct Style {
     pub run_property: RunProperty,
     pub paragraph_property: ParagraphProperty,
     pub table_property: TableProperty,
+    pub table_row_property: TableRowProperty,
     pub table_cell_property: TableCellProperty,
     pub based_on: Option<BasedOn>,
     pub next: Option<Next>,
@@ -56,6 +57,7 @@ impl Default for Style {
             run_property: rpr,
             paragraph_property: ppr,
             table_property: TableProperty::new(),
+            table_row_property: TableRowProperty::new(),
             table_cell_property: TableCellProperty::new(),
             based_on: None,
             next: None,
@@ -294,6 +296,11 @@ impl Style {
         self
     }
 
+    pub fn table_row_property(mut self, p: TableRowProperty) -> Self {
+        self.table_row_property = p;
+        self
+    }
+
     // frameProperty
     pub fn wrap(mut self, wrap: impl Into<String>) -> Self {
         self.paragraph_property.frame_property = Some(FrameProperty {
@@ -404,8 +411,9 @@ impl BuildXML for Style {
             .add_child(&self.run_property)?
             .add_child(&self.paragraph_property)?
             .apply_if(self.style_type == StyleType::Table, |b| {
-                b.add_child(&self.table_cell_property)?
-                    .add_child(&self.table_property)
+                b.add_child(&self.table_property)?
+                    .add_child(&self.table_row_property)?
+                    .add_child(&self.table_cell_property)
             })?
             .add_optional_child(&self.next)?
             .add_optional_child(&self.link)?
@@ -435,7 +443,7 @@ mod tests {
         let b = c.build();
         assert_xml_eq(
             str::from_utf8(&b).unwrap(),
-            r#"<w:style w:type="paragraph" w:styleId="Heading"><w:name w:val="Heading1" /><w:rPr /><w:pPr><w:rPr /></w:pPr><w:qFormat /></w:style>"#
+            r#"<w:style w:type="paragraph" w:styleId="Heading"><w:name w:val="Heading1" /><w:rPr /><w:pPr><w:rPr /></w:pPr><w:qFormat /></w:style>"#,
         );
     }
 
@@ -462,7 +470,27 @@ mod tests {
         let b = c.build();
         assert_xml_eq(
             str::from_utf8(&b).unwrap(),
-            r#"<w:style w:type="paragraph" w:styleId="MyStyle"><w:name w:val="My Style" /><w:rPr /><w:pPr><w:rPr /></w:pPr><w:uiPriority w:val="99" /><w:semiHidden /><w:unhideWhenUsed /></w:style>"#
+            r#"<w:style w:type="paragraph" w:styleId="MyStyle"><w:name w:val="My Style" /><w:rPr /><w:pPr><w:rPr /></w:pPr><w:uiPriority w:val="99" /><w:semiHidden /><w:unhideWhenUsed /></w:style>"#,
         );
+    }
+
+    #[test]
+    fn test_build_with_table_row_property() {
+        let style = Style::new("TableWithRowProperty", StyleType::Table)
+            .table_row_property(TableRowProperty::new().cant_split().header());
+        let xml = String::from_utf8(style.build()).unwrap();
+
+        assert!(xml.contains(r#"<w:trPr><w:cantSplit /><w:tblHeader /></w:trPr>"#));
+        assert!(xml.find("</w:tblPr>").unwrap() < xml.find("<w:trPr>").unwrap());
+    }
+
+    #[test]
+    fn test_table_row_property_json() {
+        let style = Style::new("TableWithRowProperty", StyleType::Table)
+            .table_row_property(TableRowProperty::new().cant_split().header());
+        let json = serde_json::to_value(style).unwrap();
+
+        assert_eq!(json["tableRowProperty"]["cantSplit"], "cantSplit");
+        assert_eq!(json["tableRowProperty"]["header"], "tblHeader");
     }
 }

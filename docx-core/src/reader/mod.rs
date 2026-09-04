@@ -66,6 +66,7 @@ mod table_cell_property;
 mod table_position_property;
 mod table_property;
 mod table_row;
+mod table_row_property;
 mod tabs;
 mod text_box_content;
 mod theme;

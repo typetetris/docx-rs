@@ -66,6 +66,11 @@ impl ElementReader for Style {
                                 style = style.table_property(p);
                             }
                         }
+                        XMLElement::TableRowProperty => {
+                            if let Ok(p) = TableRowProperty::read(r, &attributes) {
+                                style = style.table_row_property(p);
+                            }
+                        }
                         XMLElement::TableCellProperty => {
                             if let Ok(p) = TableCellProperty::read(r, &attributes) {
                                 style = style.table_cell_property(p);
@@ -99,5 +104,36 @@ mod tests {
 
         assert!(style.is_default);
         assert_eq!(style.style_id, "TableNormal");
+    }
+
+    #[test]
+    fn reads_table_row_property_without_consuming_following_properties() {
+        let xml = r#"<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+    <w:style w:type="table" w:styleId="TableWithRowProperty">
+        <w:trPr>
+            <w:trHeight w:val="240" w:hRule="exact" />
+            <w:cantSplit />
+            <w:tblHeader />
+        </w:trPr>
+        <w:tcPr>
+            <w:vAlign w:val="bottom" />
+        </w:tcPr>
+    </w:style>
+</w:styles>"#;
+        let styles = Styles::from_xml(xml.as_bytes()).unwrap();
+        let style = &styles.styles[0];
+
+        assert_eq!(
+            style.table_row_property,
+            TableRowProperty::new()
+                .row_height(240.0)
+                .height_rule(HeightRule::Exact)
+                .cant_split()
+                .header()
+        );
+        assert_eq!(
+            style.table_cell_property,
+            TableCellProperty::new().vertical_align(VAlignType::Bottom)
+        );
     }
 }
